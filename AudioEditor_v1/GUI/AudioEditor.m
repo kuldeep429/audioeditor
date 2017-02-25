@@ -85,8 +85,8 @@ gui = creatgui(Interfacedata);
             'XGrid','on','YGrid','on','FontSize',7);
         
         %% Spectrum tab
-        gui.SpectrumDisp1 = uix.Panel('Parent', gui.SpectrumDispVBox);
-        gui.SpectrumDisp2 = uix.Panel('Parent', gui.SpectrumDispVBox);
+        gui.SpectrumDisp1 = uicontainer('Parent', gui.SpectrumDispVBox);
+        gui.SpectrumDisp2 = uicontainer('Parent', gui.SpectrumDispVBox);
         
         gui.SpectrumDispChn1 = axes('Parent', gui.SpectrumDisp1,'Box','on','ylim',[-2,2],'xlim',[0,10],...
             'XGrid','on','YGrid','on','FontSize',7); %'PlotBoxAspectRatio',[3,1,0.75]
@@ -245,66 +245,8 @@ gui = creatgui(Interfacedata);
                 end
             end
             
-            SelectedNodeData = AllData(Pos).ImportedFile;            
-            
-            %Clear all axis
-            cla(gui.WaveformAxisChn1);cla(gui.WaveformAxisChn2);
-            cla(gui.SpectrumDispChn1);cla(gui.SpectrumDispChn2);
-            
-            if gui.Data.ImportedFile.NoChn == 1
-                %Make settings
-                set(gui.WaveformAxisChn2,'Visible','off');
-                set(gui.WaveformDispVBox,'Heights',[-1,0]);
-                
-                %Display mono in only left channel display
-                plot(gui.WaveformAxisChn1,SelectedNodeData.Time.t(:),SelectedNodeData.Time.Amplitude(:,1),'Tag','Chan1Data');
-                set(gui.WaveformAxisChn1,'xlim',[min(SelectedNodeData.Time.t(:)),max(SelectedNodeData.Time.t(:))]);
-                set(gui.WaveformAxisChn1,'FontSize',8,'FontWeight','bold');
-                gui.WaveformAxisChn1.YLabel.String='Amplitude';
-                gui.WaveformAxisChn1.XLabel.String='Time, s';
-                
-                set(gui.SpectrumDispChn2,'Visible','off')
-                set(gui.SpectrumDispVBox,'Heights',[-1,0]);
-                
-                %Display mono spectrum in only left channel display
-                imagesc(gui.SpectrumDispChn1,SelectedNodeData.FFT.WindowTime{1},SelectedNodeData.FFT.f{1}, SelectedNodeData.FFT.Amplitude{1});
-                set(gui.SpectrumDispChn1,'YDir','normal','FontSize',8,'FontWeight','bold');
-                gui.SpectrumDispChn1.YLabel.String='Frequency, Hz';
-                gui.SpectrumDispChn1.XLabel.String='Time, s';
-                
-            elseif gui.Data.ImportedFile.NoChn == 2
-                %Make settings
-                set(gui.WaveformAxisChn1,'Visible','on'); set(gui.WaveformAxisChn2,'Visible','on');
-                set(gui.SpectrumDispChn1,'Visible','on'); set(gui.SpectrumDispChn2,'Visible','on');
-                set(gui.WaveformDispVBox,'Heights',[-1,-1]); set(gui.SpectrumDispVBox,'Heights',[-1,-1]);
-                
-                %Left Channel
-                plot(gui.WaveformAxisChn1,SelectedNodeData.Time.t(:),SelectedNodeData.Time.Amplitude(:,1),'Tag','Chan1Data');
-                set(gui.WaveformAxisChn1,'xlim',[min(SelectedNodeData.Time.t(:)),max(SelectedNodeData.Time.t(:))]);
-                set(gui.WaveformAxisChn1,'FontSize',8,'FontWeight','bold');
-                gui.WaveformAxisChn1.YLabel.String='Amplitude';
-                gui.WaveformAxisChn1.XLabel.String='Time, s';
-                
-                %Right Channel
-                plot(gui.WaveformAxisChn2,SelectedNodeData.Time.t(:),SelectedNodeData.Time.Amplitude(:,2),'Tag','Chan2Data');
-                set(gui.WaveformAxisChn2,'xlim',[min(SelectedNodeData.Time.t(:)),max(SelectedNodeData.Time.t(:))]);
-                set(gui.WaveformAxisChn2,'FontSize',8,'FontWeight','bold');
-                gui.WaveformAxisChn2.YLabel.String='Amplitude';
-                gui.WaveformAxisChn2.XLabel.String='Time, s';
-                
-                % FFT spectrum
-                %channel1
-                imagesc(gui.SpectrumDispChn1,SelectedNodeData.FFT.WindowTime{1},SelectedNodeData.FFT.f{1}, SelectedNodeData.FFT.Amplitude{1},'Tag','Chan1Spectrum');
-                set(gui.SpectrumDispChn1,'YDir','normal','FontSize',8,'FontWeight','bold');
-                gui.SpectrumDispChn1.YLabel.String='Frequency, Hz';
-                gui.SpectrumDispChn1.XLabel.String='Time, s';
-                
-                %Channel2
-                imagesc(gui.SpectrumDispChn2,SelectedNodeData.FFT.WindowTime{2},SelectedNodeData.FFT.f{2}, SelectedNodeData.FFT.Amplitude{2},'Tag','Chan2Spectrum');
-                set(gui.SpectrumDispChn2,'YDir','normal','FontSize',8,'FontWeight','bold');
-                gui.SpectrumDispChn2.YLabel.String='Frequency, Hz';
-                gui.SpectrumDispChn2.XLabel.String='Time, s';
-            end
+            SelectedNodeData = AllData(Pos).ImportedFile; 
+            gui = UpdateAxis(gui,SelectedNodeData.Time.Amplitude,SelectedNodeData.Time.t,SelectedNodeData.FFT.Amplitude,SelectedNodeData.FFT.f,SelectedNodeData.FFT.WindowTime);            
             set(gui.TimeDispay,'String',['0.00','s'])
         end
     end
@@ -355,15 +297,22 @@ gui = creatgui(Interfacedata);
 %         if strcmp(gui.player.Running, 'on')
 %             stop(gui.player)
 %         end
+        set(gui.popupwindow.fig,'Visible','off')
+        drawnow
         Parameter = ClassParameter;
         ValidFieldsIdx = ~isvalid(gui.popupwindow.PrameterValues);
         gui.popupwindow.PrameterValues(ValidFieldsIdx)=[];
         for ParNo = 1: numel(gui.popupwindow.PrameterValues)
             Target = gui.popupwindow.PrameterValues(ParNo).UserData;
             Style = gui.popupwindow.PrameterValues(ParNo).Style;
+            
             switch lower(Style)
                 case 'edit'
                     Value = str2double(gui.popupwindow.PrameterValues(ParNo).String);
+                case 'popupmenu'
+                    Indx = gui.popupwindow.PrameterValues(ParNo).Value;
+                    String = gui.popupwindow.PrameterValues(ParNo).String;
+                    Value = String{Indx};
                 otherwise
                     Value = gui.popupwindow.PrameterValues(ParNo).Value;
             end            
@@ -378,20 +327,23 @@ gui = creatgui(Interfacedata);
         Fs = 1/(x(2)-x(1));
         
         Effect = varargin{3};
-        switch lower(Effect)
-            case 'mono echo'
-                 [t,ye,FFTArray,Frequency,WindowTime] = InitiateEchoEffect(y,Fs,Parameter);
-            case 'lowpass'
-                 [t,ye,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Parameter);
-            case 'highpass'
-                 [t,ye,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Parameter);
-            case 'bandpass'
-                 [t,ye,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Parameter);
-            otherwise
-                error('Undefined Effect')
-        end        
-        gui = UpdateAxis(gui,ye,t,FFTArray,Frequency,WindowTime);
-        close(gui.popupwindow.fig)
+        [SubEffectClass,FoundFlag] = FindObj(Parameter,Effect);
+        if FoundFlag
+            switch lower(Effect)
+                case 'mono echo'
+                    [t,y,FFTArray,Frequency,WindowTime] = InitiateEchoEffect(y,Fs,Parameter);
+                case 'lowpass'
+                    [t,y,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Fs,SubEffectClass,Effect);
+                case 'highpass'
+                    [t,y,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Fs,SubEffectClass,Effect);
+                case 'bandpass'
+                    [t,y,FFTArray,Frequency,WindowTime] = InitiateFilter(y,Fs,SubEffectClass,Effect);
+                otherwise
+                    error('Undefined Effect')
+            end
+            gui = UpdateAxis(gui,y,t,FFTArray,Frequency,WindowTime);
+            close(gui.popupwindow.fig)
+        end
     end
 
     %% Check for valid handle

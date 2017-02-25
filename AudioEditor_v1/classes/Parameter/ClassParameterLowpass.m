@@ -1,6 +1,6 @@
 classdef ClassParameterLowpass
    properties
-        HeigherCutOff@double
+        HigherCutOff@double
         FilterType@char
    end
    

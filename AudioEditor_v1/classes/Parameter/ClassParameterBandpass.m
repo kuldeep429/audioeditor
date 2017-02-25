@@ -1,7 +1,7 @@
 classdef ClassParameterBandpass
    properties
     LowerCutOff@double
-    HeigherCutOff@double
+    HigherCutOff@double
     FilterType@char
    end
    
